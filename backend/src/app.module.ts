@@ -14,6 +14,7 @@ import { StoragesModule } from './storages/storages.module';
 import { TransactionsController } from './transactions/transactions.controller';
 import { TransactionsService } from './transactions/transactions.service';
 import { TransactionsModule } from './transactions/transactions.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     WastesModule,
     StoragesModule,
     TransactionsModule,
+    HealthModule,
   ],
   controllers: [
     OwnersController,
