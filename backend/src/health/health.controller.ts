@@ -18,9 +18,15 @@ export class HealthController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @Get()
+  @Get('live')
   @HealthCheck()
-  check() {
+  live() {
+    return this.healthService.check([]);
+  }
+
+  @Get('ready')
+  @HealthCheck()
+  ready() {
     return this.healthService.check([() => this.checkDatabase()]);
   }
 
