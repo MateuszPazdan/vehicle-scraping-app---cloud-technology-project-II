@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -14,9 +14,7 @@ import { StoragesModule } from './storages/storages.module';
 import { TransactionsController } from './transactions/transactions.controller';
 import { TransactionsService } from './transactions/transactions.service';
 import { TransactionsModule } from './transactions/transactions.module';
-import { MetricsModule } from './monitoring/metrics.module';
-import { MetricsController } from './monitoring/metrics.controller';
-import { MetricsMiddleware } from './monitoring/metrics.middleware';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -28,19 +26,14 @@ import { MetricsMiddleware } from './monitoring/metrics.middleware';
     WastesModule,
     StoragesModule,
     TransactionsModule,
-    MetricsModule,
+    HealthModule,
   ],
   controllers: [
     OwnersController,
     WastesController,
     StoragesController,
     TransactionsController,
-    MetricsController,
   ],
   providers: [WastesService, StoragesService, TransactionsService],
 })
-export class AppModule implements NestModule{
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(MetricsMiddleware).forRoutes('*');
-  }
-}
+export class AppModule {}
