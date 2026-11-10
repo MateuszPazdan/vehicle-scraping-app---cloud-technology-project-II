@@ -3,11 +3,9 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as client from 'prom-client';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  client.collectDefaultMetrics();
 
   app.enableCors({
     origin: 'http://localhost:3000',
