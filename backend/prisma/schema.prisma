@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  email          String   @unique
+  hashedPassword String
+  isAdmin        Boolean  @default(false)
+}
+
+model Owner {
+  id        Int       @id @default(autoincrement())
+  name      String
+  surname   String
+  pesel     String    @unique
+  address   String
+  id_number String    @unique
+  vehicles  Vehicle[]
+}
+
+model Vehicle {
+  id                              Int                     @id @default(autoincrement())
+  brand                           String
+  model                           String
+  year_of_production              Int
+  vin                             String                  @unique
+  registration_number             String                  @unique
+  registration_certificate_number String                  @unique
+  weight                          Float
+  owners                          Owner[]
+  status                          VehicleStatus           @default(RECEIVED_FOR_DISMANTLING)
+  receivedAt                      DateTime                @default(now())
+  dismantledAt                    DateTime?
+  wasteEntries                    WasteEntry[]
+  DismantlingCertificate          DismantlingCertificate?
+  price                           Float
+}
+
+model DismantlingCertificate {
+  id                Int     @id @default(autoincrement())
+  certificateNumber Int     @unique
+  fileLink          String
+  vehicle           Vehicle @relation(fields: [vehicleId], references: [id])
+  vehicleId         Int     @unique
+  generatedAt       DateTime @default(now())
+}
+
+model WasteEntry {
+  id                Int             @id @default(autoincrement())
+  vehicle           Vehicle         @relation(fields: [vehicleId], references: [id])
+  vehicleId         Int
+  wasteType         WasteType       @relation(fields: [wasteTypeId], references: [id])
+  wasteTypeId       Int
+  weight            Float
+  createdAt         DateTime        @default(now())
+  storageLocation   StorageLocation @relation(fields: [storageLocationId], references: [id])
+  storageLocationId Int
+}
+
+model WasteTransaction {
+  id                Int             @id @default(autoincrement())
+  weight            Float
+  transactionDate   DateTime        @default(now())
+  wasteType         WasteType       @relation(fields: [wasteTypeId], references: [id])
+  wasteTypeId       Int
+  storageLocation   StorageLocation @relation(fields: [storageLocationId], references: [id])
+  storageLocationId Int
+  totalPrice        Float
+}
+
+model WasteType {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  pricePerKg       Float
+  storageLocation  StorageLocation[]
+  WasteEntry       WasteEntry[]
+  WasteTransaction WasteTransaction[]
+}
+
+model StorageLocation {
+  id               Int                @id @default(autoincrement())
+  locationNr       String             @unique
+  currentMass      Float
+  wasteType        WasteType          @relation(fields: [wasteTypeId], references: [id])
+  wasteTypeId      Int
+  WasteEntry       WasteEntry[]
+  WasteTransaction WasteTransaction[]
+}
+
+enum VehicleStatus {
+  DISMANTLED
+  RECEIVED_FOR_DISMANTLING
+}
