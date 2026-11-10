@@ -1,5 +1,5 @@
 {
-  "name": "piast-backend",
+  "name": "vehicle-scraping-backend",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -39,7 +39,6 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
-    "piast-backend": "file:",
     "prisma": "^6.19.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
