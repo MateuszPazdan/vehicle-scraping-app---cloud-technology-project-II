@@ -21,6 +21,8 @@ jobs:
       - uses: azure/use-kubelogin@v1
         with:
           kubelogin-version: 'latest'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - uses: azure/aks-set-context@v4
         with:
