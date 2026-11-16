@@ -14,17 +14,34 @@ spec:
       labels:
         app: postgres
     spec:
+      serviceAccountName: backend-sa
       containers:
         - name: postgres
           image: postgres:15
           ports:
             - containerPort: 5432
-          envFrom:
-            - secretRef:
-                name: app-secret
+          env:
+            - name: POSTGRES_USER
+              value: db_admin
+            - name: POSTGRES_DB
+              value: uswp
+            - name: POSTGRES_PASSWORD_FILE
+              value: /mnt/secrets/postgres-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
+            - name: kv-secrets
+              mountPath: /mnt/secrets
+              readOnly: true
+      volumes:
+        - name: kv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: postgres-kv
 
   volumeClaimTemplates:
     - metadata:
