@@ -24,6 +24,14 @@ COPY --from=builder /app/prisma ./prisma
 
 RUN npx prisma generate
 
-EXPOSE 8000
+RUN rm -rf /usr/local/lib/node_modules/npm \
+    /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm \
+    /usr/local/bin/npx \
+    /usr/local/bin/corepack \
+    /usr/local/bin/yarn \
+    /usr/local/bin/yarnpkg \
+    /opt/yarn-v*
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+EXPOSE 8000
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist/main.js"]

@@ -1,0 +1,77 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: acrvehiclescraping.azurecr.io
+  IMAGE_TAG: ${{ github.sha }}
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.76.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      backend-digest: ${{ steps.push-backend.outputs.digest }}
+      frontend-digest: ${{ steps.push-frontend.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build backend image
+        run: docker build -t "$REGISTRY/backend:$IMAGE_TAG" ./backend
+
+      - name: Build frontend image
+        run: docker build -t "$REGISTRY/frontend:$IMAGE_TAG" ./frontend
+
+      - name: Scan backend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore:/.trivyignore:ro" \
+            "$TRIVY_IMAGE" image \
+            --severity HIGH,CRITICAL --ignore-unfixed \
+            --ignorefile /.trivyignore --exit-code 1 \
+            "$REGISTRY/backend:$IMAGE_TAG"
+
+      - name: Scan frontend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore:/.trivyignore:ro" \
+            "$TRIVY_IMAGE" image \
+            --severity HIGH,CRITICAL --ignore-unfixed \
+            --ignorefile /.trivyignore --exit-code 1 \
+            "$REGISTRY/frontend:$IMAGE_TAG"
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_BUILD }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        run: az acr login --name acrvehiclescraping
+
+      - name: Push backend image
+        id: push-backend
+        run: |
+          docker push "$REGISTRY/backend:$IMAGE_TAG"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY/backend:$IMAGE_TAG" | cut -d@ -f2)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "backend: $digest" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push frontend image
+        id: push-frontend
+        run: |
+          docker push "$REGISTRY/frontend:$IMAGE_TAG"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY/frontend:$IMAGE_TAG" | cut -d@ -f2)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "frontend: $digest" >> "$GITHUB_STEP_SUMMARY"

@@ -49,7 +49,7 @@ export default function OwnerList() {
 										<button
 											onClick={() =>
 												router.push(
-													`${process.env.NEXT_PUBLIC_FRONTEND_URL}/admin/panel/vehicles?owner_pesel=${owner.pesel}`
+													`/admin/panel/vehicles?owner_pesel=${owner.pesel}`,
 												)
 											}
 											className='text-main hover:text-mainHover font-medium transition-colors duration-300'
