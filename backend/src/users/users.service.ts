@@ -15,6 +15,10 @@ export class UsersService {
   }
 
   async getUsers() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({
+      omit: {
+        hashedPassword: true,
+      },
+    });
   }
 }
