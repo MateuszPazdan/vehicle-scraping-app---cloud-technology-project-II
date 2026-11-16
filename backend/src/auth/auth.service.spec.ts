@@ -64,11 +64,11 @@ describe('AuthService', () => {
   describe('register', () => {
     it('rejects the request when the admin key is incorrect and does not create an account', async () => {
       process.env.ADMIN_KEY = 'test-admin-key';
-      const dto = {
+      const dto: AuthDto = {
         email: 'new@example.com',
         password,
         adminKey: 'wrong-key',
-      } as AuthDto;
+      };
 
       await expect(service.register(dto)).rejects.toThrow(
         UnauthorizedException,
