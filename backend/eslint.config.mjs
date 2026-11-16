@@ -33,7 +33,10 @@ export default tseslint.config(
       'prettier/prettier': 0,
       '@typescript-eslint/no-unsafe-call': 'off',
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { ignoreRestSiblings: true },
+      ],
     },
   },
 );
