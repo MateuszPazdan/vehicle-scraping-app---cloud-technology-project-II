@@ -1,0 +1,95 @@
+name: deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      backend-digest:
+        required: true
+        type: string
+      frontend-digest:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      REGISTRY: acrvehiclescraping.azurecr.io
+      NAMESPACE: ${{ inputs.environment }}
+      BACKEND_DIGEST: ${{ inputs.backend-digest }}
+      FRONTEND_DIGEST: ${{ inputs.frontend-digest }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate digests
+        run: |
+          for d in "$BACKEND_DIGEST" "$FRONTEND_DIGEST"; do
+            if [[ ! "$d" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+              echo "Invalid image digest: '$d'"
+              exit 1
+            fi
+          done
+
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up kubelogin
+        uses: azure/use-kubelogin@v1
+        with:
+          kubelogin-version: 'v0.2.22'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v5
+        with:
+          resource-group: rg-vehicle-scraping
+          cluster-name: aks-vehicle-scraping
+          use-kubelogin: 'true'
+
+      - name: Render manifests
+        run: |
+          cd "k8s/overlays/$NAMESPACE"
+          kustomize edit set image \
+            "$REGISTRY/backend@$BACKEND_DIGEST" \
+            "$REGISTRY/frontend@$FRONTEND_DIGEST"
+          kustomize build . > "$RUNNER_TEMP/rendered.yaml"
+          grep 'image:' "$RUNNER_TEMP/rendered.yaml"
+
+      - name: Apply database and run migrations
+        run: |
+          kubectl delete job backend-migrate -n "$NAMESPACE" --ignore-not-found
+          yq 'select(.kind != "Deployment")' "$RUNNER_TEMP/rendered.yaml" | kubectl apply -f -
+          kubectl rollout status statefulset/postgres -n "$NAMESPACE" --timeout=300s
+          if ! kubectl wait job/backend-migrate -n "$NAMESPACE" --for=condition=complete --timeout=360s; then
+            echo "Migration failed:"
+            kubectl logs job/backend-migrate -n "$NAMESPACE" --tail=50 || true
+            exit 1
+          fi
+          kubectl logs job/backend-migrate -n "$NAMESPACE" --tail=20
+
+      - name: Deploy application
+        run: |
+          kubectl apply -f "$RUNNER_TEMP/rendered.yaml"
+          kubectl rollout status deployment/backend-deployment -n "$NAMESPACE" --timeout=300s
+          kubectl rollout status deployment/frontend-deployment -n "$NAMESPACE" --timeout=300s
+      - name: Summary
+        run: |
+          echo "### $NAMESPACE" >> "$GITHUB_STEP_SUMMARY"
+          kubectl get deployment -n "$NAMESPACE" \
+            -o jsonpath='{range .items[*]}- {.metadata.name}: `{.spec.template.spec.containers[0].image}`{"\n"}{end}' \
+            >> "$GITHUB_STEP_SUMMARY"

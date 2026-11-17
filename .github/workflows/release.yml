@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 env:
   REGISTRY: acrvehiclescraping.azurecr.io
   IMAGE_TAG: ${{ github.sha }}
@@ -51,7 +55,7 @@ jobs:
             "$REGISTRY/frontend:$IMAGE_TAG"
 
       - name: Log in to Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID_BUILD }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -75,3 +79,36 @@ jobs:
           digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY/frontend:$IMAGE_TAG" | cut -d@ -f2)
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "frontend: $digest" >> "$GITHUB_STEP_SUMMARY"
+          
+  deploy-dev:
+    needs: build
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      backend-digest: ${{ needs.build.outputs.backend-digest }}
+      frontend-digest: ${{ needs.build.outputs.frontend-digest }}
+
+  deploy-staging:
+    needs: [build, deploy-dev]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: staging
+      backend-digest: ${{ needs.build.outputs.backend-digest }}
+      frontend-digest: ${{ needs.build.outputs.frontend-digest }}
+
+  deploy-prod:
+    needs: [build, deploy-staging]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: prod
+      backend-digest: ${{ needs.build.outputs.backend-digest }}
+      frontend-digest: ${{ needs.build.outputs.frontend-digest }}

@@ -14,6 +14,7 @@ services:
   backend:
     build:
       context: ./backend
+    command: ['sh', '-c', 'node node_modules/prisma/build/index.js migrate deploy && node dist/main.js']
     ports:
       - '8000:8000'
     depends_on:
