@@ -84,12 +84,39 @@ jobs:
 
       - name: Deploy application
         run: |
+          revision() {
+            kubectl get deployment "$1" -n "$NAMESPACE" \
+              -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}' 2>/dev/null || true
+          }
+          BACKEND_REV=$(revision backend-deployment)
+          FRONTEND_REV=$(revision frontend-deployment)
+          echo "Current revisions: backend=${BACKEND_REV:-none} frontend=${FRONTEND_REV:-none}"
+
           kubectl apply -f "$RUNNER_TEMP/rendered.yaml"
-          kubectl rollout status deployment/backend-deployment -n "$NAMESPACE" --timeout=300s
-          kubectl rollout status deployment/frontend-deployment -n "$NAMESPACE" --timeout=300s
+
+          if kubectl rollout status deployment/backend-deployment -n "$NAMESPACE" --timeout=180s \
+            && kubectl rollout status deployment/frontend-deployment -n "$NAMESPACE" --timeout=180s; then
+            exit 0
+          fi
+
+          echo "::error::Rollout failed in $NAMESPACE, rolling back"
+          kubectl get pods -n "$NAMESPACE"
+          if [ -n "$BACKEND_REV" ]; then
+            kubectl rollout undo deployment/backend-deployment -n "$NAMESPACE" --to-revision="$BACKEND_REV"
+          fi
+          if [ -n "$FRONTEND_REV" ]; then
+            kubectl rollout undo deployment/frontend-deployment -n "$NAMESPACE" --to-revision="$FRONTEND_REV"
+          fi
+          kubectl rollout status deployment/backend-deployment -n "$NAMESPACE" --timeout=180s || true
+          kubectl rollout status deployment/frontend-deployment -n "$NAMESPACE" --timeout=180s || true
+          exit 1
+
       - name: Summary
+        if: ${{ !cancelled() }}
         run: |
           echo "### $NAMESPACE" >> "$GITHUB_STEP_SUMMARY"
           kubectl get deployment -n "$NAMESPACE" \
             -o jsonpath='{range .items[*]}- {.metadata.name}: `{.spec.template.spec.containers[0].image}`{"\n"}{end}' \
             >> "$GITHUB_STEP_SUMMARY"
+
+
