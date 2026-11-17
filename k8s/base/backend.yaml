@@ -58,6 +58,7 @@ spec:
               port: 8000
             periodSeconds: 2
             failureThreshold: 30
+            timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /api/health/live
