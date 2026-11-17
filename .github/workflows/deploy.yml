@@ -73,8 +73,9 @@ jobs:
       - name: Apply database and run migrations
         run: |
           kubectl delete job backend-migrate -n "$NAMESPACE" --ignore-not-found
-          yq 'select(.kind != "Deployment")' "$RUNNER_TEMP/rendered.yaml" | kubectl apply -f -
+          yq 'select(.kind != "Deployment" and .kind != "Job")' "$RUNNER_TEMP/rendered.yaml" | kubectl apply -f -
           kubectl rollout status statefulset/postgres -n "$NAMESPACE" --timeout=300s
+          yq 'select(.kind == "Job")' "$RUNNER_TEMP/rendered.yaml" | kubectl apply -f -
           if ! kubectl wait job/backend-migrate -n "$NAMESPACE" --for=condition=complete --timeout=360s; then
             echo "Migration failed:"
             kubectl logs job/backend-migrate -n "$NAMESPACE" --tail=50 || true
