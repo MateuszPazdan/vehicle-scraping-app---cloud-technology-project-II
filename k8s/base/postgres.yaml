@@ -27,6 +27,12 @@ spec:
             limits:
               cpu: '300m'
               memory: '512Mi'
+          readinessProbe:
+            exec:
+              command: ['pg_isready', '-h', '127.0.0.1', '-U', 'db_admin', '-d', 'uswp']
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           env:
             - name: POSTGRES_USER
               value: db_admin
