@@ -33,5 +33,8 @@ RUN rm -rf /usr/local/lib/node_modules/npm \
     /usr/local/bin/yarnpkg \
     /opt/yarn-v*
 
+ARG APP_VERSION=unknown
+ENV APP_VERSION=$APP_VERSION
+
 EXPOSE 8000
 CMD ["node", "dist/main.js"]

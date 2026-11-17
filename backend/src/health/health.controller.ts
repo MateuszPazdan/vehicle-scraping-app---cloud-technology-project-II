@@ -18,6 +18,11 @@ export class HealthController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Get('version')
+  version() {
+    return { version: process.env.APP_VERSION ?? 'unknown' };
+  }
+
   @Get('live')
   @HealthCheck()
   live() {
@@ -43,7 +48,6 @@ export class HealthController {
 
     return indicator.up();
   }
-
 
   private async checkDatabase() {
     const indicator = this.healthIndicator.check('database');
