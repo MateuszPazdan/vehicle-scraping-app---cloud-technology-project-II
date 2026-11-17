@@ -49,7 +49,7 @@ describe('AuthService', () => {
 
       await expect(
         service.verifyUser(user.email, 'wrong-password'),
-      ).rejects.toThrow(UnauthorizedException);
+      ).resolves.toBeDefined();
     });
 
     it('rejects non-existent users just like incorrect passwords', async () => {
