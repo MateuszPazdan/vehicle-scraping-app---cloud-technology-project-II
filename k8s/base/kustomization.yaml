@@ -3,5 +3,7 @@ kind: Kustomization
 resources:
   - serviceaccount.yaml
   - postgres.yaml
+  - migrate-job.yaml
   - backend.yaml
   - frontend.yaml
+

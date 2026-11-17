@@ -34,4 +34,4 @@ RUN rm -rf /usr/local/lib/node_modules/npm \
     /opt/yarn-v*
 
 EXPOSE 8000
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist/main.js"]
+CMD ["node", "dist/main.js"]
