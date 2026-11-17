@@ -17,7 +17,7 @@ spec:
       serviceAccountName: backend-sa
       containers:
         - name: backend
-          image: acrvehiclescraping.azurecr.io/backend:manual-etap3
+          image: acrvehiclescraping.azurecr.io/backend
           ports:
             - containerPort: 8000
           env:

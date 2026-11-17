@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: vehicleappregistry.azurecr.io/frontend:1.0
+        image: acrvehiclescraping.azurecr.io/frontend
         ports:
         - containerPort: 3000
 
