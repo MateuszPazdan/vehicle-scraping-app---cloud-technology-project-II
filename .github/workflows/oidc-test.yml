@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     steps:
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -20,22 +20,32 @@ jobs:
 
       - uses: azure/use-kubelogin@v1
         with:
-          kubelogin-version: 'latest'
+          kubelogin-version: 'v0.2.22'
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - uses: azure/aks-set-context@v4
+      - uses: azure/aks-set-context@v5
         with:
           resource-group: rg-vehicle-scraping
           cluster-name: aks-vehicle-scraping
           use-kubelogin: 'true'
 
-      - name: Dostep do dev
+      - name: Odczyt w dev
         run: kubectl get pods -n dev
 
-      - name: Dostep do prod
+      - name: Zapis w dev
+        run: kubectl create configmap access-test --from-literal=check=ok -n dev --dry-run=server
+
+      - name: Odczyt w prod
         run: |
           if kubectl get pods -n prod; then
-            echo "BLAD: tozsamosc dev ma dostep do prod"
+            echo "BLAD: tozsamosc dev moze czytac prod"
+            exit 1
+          fi
+
+      - name: Zapis w prod
+        run: |
+          if kubectl create configmap access-test --from-literal=check=ok -n prod --dry-run=server; then
+            echo "BLAD: tozsamosc dev moze zmieniac prod"
             exit 1
           fi
