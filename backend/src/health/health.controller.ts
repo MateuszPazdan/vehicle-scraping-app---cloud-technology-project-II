@@ -27,8 +27,23 @@ export class HealthController {
   @Get('ready')
   @HealthCheck()
   ready() {
-    return this.healthService.check([() => this.checkDatabase()]);
+    return this.healthService.check([
+      () => this.checkDatabase(),
+      () => this.checkSimulatedFailure(),
+    ]);
   }
+
+  private checkSimulatedFailure() {
+    const indicator = this.healthIndicator.check('app');
+
+    if (process.env.SIMULATE_UNHEALTHY === 'true') {
+      this.logger.warn('SIMULATE_UNHEALTHY is set, reporting not ready');
+      return indicator.down();
+    }
+
+    return indicator.up();
+  }
+
 
   private async checkDatabase() {
     const indicator = this.healthIndicator.check('database');

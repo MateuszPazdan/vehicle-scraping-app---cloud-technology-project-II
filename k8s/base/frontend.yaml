@@ -6,6 +6,7 @@ metadata:
     app: frontend
 spec:
   replicas: 1
+  progressDeadlineSeconds: 120
   selector:
     matchLabels:
       app: frontend
@@ -26,9 +27,26 @@ spec:
           limits:
             cpu: '300m'
             memory: '384Mi'
-
-        
-
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          periodSeconds: 2
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
