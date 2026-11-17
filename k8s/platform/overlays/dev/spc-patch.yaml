@@ -1,0 +1,17 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: postgres-kv
+spec:
+  parameters:
+    clientID: 1a1b1d45-b066-4dde-9092-d88c3da00ec7
+    keyvaultName: kv-vscrap-dev
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: backend-kv
+spec:
+  parameters:
+    clientID: 1a1b1d45-b066-4dde-9092-d88c3da00ec7
+    keyvaultName: kv-vscrap-dev
