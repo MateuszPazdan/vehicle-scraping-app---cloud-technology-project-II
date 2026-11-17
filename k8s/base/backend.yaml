@@ -41,8 +41,6 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: ADMIN_KEY
-            - name: SIMULATE_UNHEALTHY
-              value: 'true'
           volumeMounts:
             - name: kv-secrets
               mountPath: /mnt/secrets
